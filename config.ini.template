@@ -1,0 +1,4 @@
+[MONGO]
+db_name = db_name_here
+user = db_username_here
+password = db_password_here
