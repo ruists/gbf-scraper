@@ -113,8 +113,8 @@ def updateBaseWeapons(data, weapons):
         wType = data.weaponTypes.find_one({"name":weapon['type'].capitalize()})
         w = {
             "name": weapon['name'],
-            "maxUncap": weapon['evo_max'],
-            "baseUncap": weapon['evo_base'],
+            "maxUncap": weapon['evo max'],
+            "baseUncap": weapon['evo base'],
             "imgUrl": data.weaponImageTemplate.format(weaponId = weapon['id']),
             "element": element,
             "rarity": rarity,
@@ -129,8 +129,13 @@ def updateBaseCharacters(data, characters):
         element = data.elements.find_one({"name":character['element'].capitalize()})
         rarity = data.rarities.find_one({"name":character['rarity']})
         style = data.styles.find_one({"name":character['type']})
-        race = data.races.find_one({"name":character['race']})
+        race = []
         weapon = []
+
+        rTokens = character['race'].split(',')
+        for token in rTokens:
+            r = data.races.find_one({"name":token})
+            race += [r]
         wTokens = character['weapon'].split(',')
         for token in wTokens:
             w = data.weaponTypes.find_one({"name":token})
@@ -138,7 +143,7 @@ def updateBaseCharacters(data, characters):
         
         c = {
             "name": character['name'],
-            "maxUncap": character['max_evo'],
+            "maxUncap": character['max evo'],
             "imgUrl": data.charaImageTemplate.format(characterId = character['id']),
             "race": race,
             "element": element,
