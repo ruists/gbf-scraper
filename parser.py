@@ -99,8 +99,8 @@ def updateBaseSummons(data, summons):
             "maxUncap": summon['evo max'],
             "baseUncap": summon['evo base'],
             "imgUrl": data.summonImageTemplate.format(summonId = summon['id']),
-            "element":element,
-            "rarity":rarity
+            "element":element['_id'],
+            "rarity":rarity['_id']
         }
         to_insert += [s]
     result = data.db['BaseSummon'].insert_many(to_insert)
@@ -111,14 +111,19 @@ def updateBaseWeapons(data, weapons):
         element = data.elements.find_one({"name":weapon['element'].capitalize()})
         rarity = data.rarities.find_one({"name":weapon['rarity']})
         wType = data.weaponTypes.find_one({"name":weapon['type'].capitalize()})
+        if not wType:
+            continue
+        if not element:
+            continue
+
         w = {
             "name": weapon['name'],
             "maxUncap": weapon['evo max'],
             "baseUncap": weapon['evo base'],
             "imgUrl": data.weaponImageTemplate.format(weaponId = weapon['id']),
-            "element": element,
-            "rarity": rarity,
-            "weaponType": wType
+            "element": element['_id'],
+            "rarity": rarity['_id'],
+            "weaponType": wType['_id']
         }
         to_insert += [w]
     result = data.db['BaseWeapon'].insert_many(to_insert)
@@ -134,13 +139,13 @@ def updateBaseCharacters(data, characters):
 
         rTokens = character['race'].split(',')
         for token in rTokens:
-            r = data.races.find_one({"name":token})
-            race += [r]
+            r = data.races.find_one({"name":token.strip().capitalize()})
+            race += [r['_id']]
         wTokens = character['weapon'].split(',')
         for token in wTokens:
-            w = data.weaponTypes.find_one({"name":token})
-            weapon += [w]
-        
+            w = data.weaponTypes.find_one({"name":token.strip().capitalize()})
+            weapon += [w['_id']]
+
         c = {
             "name": character['name'],
             "maxUncap": character['max evo'],
