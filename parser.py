@@ -8,6 +8,7 @@ import pymongo
 import json
 import datetime
 import requests
+import html
 
 session = requests.Session()
 
@@ -20,8 +21,8 @@ class Data:
         self.db = self.client[db_name]
         self.getBaseData()
         self.charaImageTemplate = "http://game-a.granbluefantasy.jp/assets_en/img_mid/sp/assets/npc/f/{characterId}_01.jpg"
-        self.weaponImageTemplate = "http://game-a.granbluefantasy.jp/assets_en/img_mid/sp/assets/weapon/ls/{weaponId}.jpg"
-        self.summonImageTemplate = "http://game-a.granbluefantasy.jp/assets_en/img_mid/sp/assets/summon/party_main/{summonId}_01.jpg"
+        self.weaponImageTemplate = "http://game-a.granbluefantasy.jp/assets_en/img_mid/sp/assets/weapon/m/{weaponId}.jpg"
+        self.summonImageTemplate = "http://game-a.granbluefantasy.jp/assets_en/img_mid/sp/assets/summon/m/{summonId}.jpg"
 
     def getBaseData(self):
         self.elements = self.db['Element']
@@ -92,12 +93,18 @@ def parseBaseData(table, fields):
 def updateBaseSummons(data, summons):
     to_insert = []
     for summon in summons:
-        element = data.elements.find_one({"name":summon['element'].capitalize()})
-        rarity = data.rarities.find_one({"name":summon['rarity']})
+        #ignore Spearsting
+        if summon['name'].strip() == "Spearsting":
+            continue
+
+        element = data.elements.find_one({"name":summon['element'].capitalize().strip()})
+        rarity = data.rarities.find_one({"name":summon['rarity'].strip()})
+
+        #unescape name twice to avoid accumulated html encodings (ampersand and apostrophes mostly)
         s = {
-            "name":summon['name'],
-            "maxUncap": summon['evo max'],
-            "baseUncap": summon['evo base'],
+            "name":html.unescape(html.unescape(summon['name'].strip())),
+            "maxUncap": int(summon['evo max'].strip()),
+            "baseUncap": int(summon['evo base'].strip()),
             "imgUrl": data.summonImageTemplate.format(summonId = summon['id']),
             "element":element['_id'],
             "rarity":rarity['_id']
@@ -107,19 +114,35 @@ def updateBaseSummons(data, summons):
 
 def updateBaseWeapons(data, weapons):
     to_insert = []
-    for weapon in weapons:
-        element = data.elements.find_one({"name":weapon['element'].capitalize()})
-        rarity = data.rarities.find_one({"name":weapon['rarity']})
-        wType = data.weaponTypes.find_one({"name":weapon['type'].capitalize()})
+    to_ignore = [
+        "Buster Sword", 
+        "Serpentine", 
+        "Kukri", 
+        "Tizona", 
+        "Panabas", 
+        "Bhuj", 
+        "Jedburgh Axe", 
+        "Regulon", 
+        "Circle of Life and Death"
+    ]
+    
+    for weapon in weapons: 
+        weaponName = weapon['name'].strip()
+        if weaponName in to_ignore:
+            continue
+        
+        element = data.elements.find_one({"name":weapon['element'].capitalize().strip()})
+        rarity = data.rarities.find_one({"name":weapon['rarity'].strip()})
+        wType = data.weaponTypes.find_one({"name":weapon['type'].capitalize().strip()})
         if not wType:
             continue
         if not element:
             continue
 
         w = {
-            "name": weapon['name'],
-            "maxUncap": weapon['evo max'],
-            "baseUncap": weapon['evo base'],
+            "name": html.unescape(html.unescape(weaponName)),
+            "maxUncap": int(weapon['evo max']),
+            "baseUncap": int(weapon['evo base']),
             "imgUrl": data.weaponImageTemplate.format(weaponId = weapon['id']),
             "element": element['_id'],
             "rarity": rarity['_id'],
@@ -147,7 +170,7 @@ def updateBaseCharacters(data, characters):
             weapon += [w['_id']]
 
         c = {
-            "name": character['name'],
+            "name": character['name'].strip(),
             "maxUncap": character['max evo'],
             "imgUrl": data.charaImageTemplate.format(characterId = character['id']),
             "race": race,
@@ -181,7 +204,7 @@ def main():
     gbfData = Data(getConfigData())
     setBaseSummons(gbfData)
     setBaseWeapons(gbfData)
-    setBaseCharacters(gbfData)
+    #setBaseCharacters(gbfData)
 
 if __name__ == "__main__":
     main()
