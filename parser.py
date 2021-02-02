@@ -20,7 +20,7 @@ class Data:
         self.client = pymongo.MongoClient(connUrl)
         self.db = self.client[db_name]
         self.getBaseData()
-        self.charaImageTemplate = "http://game-a.granbluefantasy.jp/assets_en/img_mid/sp/assets/npc/f/{characterId}_01.jpg"
+        self.charaImageTemplate = "http://game-a.granbluefantasy.jp/assets_en/img_mid/sp/assets/npc/m/{characterId}_01.jpg"
         self.weaponImageTemplate = "http://game-a.granbluefantasy.jp/assets_en/img_mid/sp/assets/weapon/m/{weaponId}.jpg"
         self.summonImageTemplate = "http://game-a.granbluefantasy.jp/assets_en/img_mid/sp/assets/summon/m/{summonId}.jpg"
 
@@ -154,19 +154,19 @@ def updateBaseWeapons(data, weapons):
 def updateBaseCharacters(data, characters):
     to_insert = []
     for character in characters:
-        element = data.elements.find_one({"name":character['element'].capitalize()})
-        rarity = data.rarities.find_one({"name":character['rarity']})
-        style = data.styles.find_one({"name":character['type']})
+        element = data.elements.find_one({"name":character['element'].capitalize().strip()})
+        rarity = data.rarities.find_one({"name":character['rarity'].upper().strip()})
+        style = data.styles.find_one({"name":character['type'].capitalize().strip()})
         race = []
         weapon = []
 
         rTokens = character['race'].split(',')
         for token in rTokens:
-            r = data.races.find_one({"name":token.strip().capitalize()})
+            r = data.races.find_one({"name":token.strip().capitalize().strip()})
             race += [r['_id']]
         wTokens = character['weapon'].split(',')
         for token in wTokens:
-            w = data.weaponTypes.find_one({"name":token.strip().capitalize()})
+            w = data.weaponTypes.find_one({"name":token.strip().capitalize().strip()})
             weapon += [w['_id']]
 
         c = {
@@ -174,9 +174,9 @@ def updateBaseCharacters(data, characters):
             "maxUncap": character['max evo'],
             "imgUrl": data.charaImageTemplate.format(characterId = character['id']),
             "race": race,
-            "element": element,
-            "rarity": rarity,
-            "style": style,
+            "element": element['_id'],
+            "rarity": rarity['_id'],
+            "style": style['_id'],
             "weaponType": weapon
         }
         to_insert += [c]
@@ -202,9 +202,9 @@ def setBaseCharacters(data):
 
 def main():
     gbfData = Data(getConfigData())
-    setBaseSummons(gbfData)
-    setBaseWeapons(gbfData)
-    #setBaseCharacters(gbfData)
+    #setBaseSummons(gbfData)
+    #setBaseWeapons(gbfData)
+    setBaseCharacters(gbfData)
 
 if __name__ == "__main__":
     main()
